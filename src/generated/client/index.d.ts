@@ -256,8 +256,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 6.11.0
-   * Query Engine version: 9c30299f5a0ea26a96790e13f796dc6094db3173
+   * Prisma Client JS version: 6.11.1
+   * Query Engine version: f40f79ec31188888a2e33acda0ecc8fd10a853a9
    */
   export type PrismaVersion = {
     client: string
@@ -4243,21 +4243,21 @@ export namespace Prisma {
 
   export type FavoriteLocationMinAggregateOutputType = {
     id: number | null
-    name: string | null
+    favoriteName: string | null
     userId: number | null
     cityId: number | null
   }
 
   export type FavoriteLocationMaxAggregateOutputType = {
     id: number | null
-    name: string | null
+    favoriteName: string | null
     userId: number | null
     cityId: number | null
   }
 
   export type FavoriteLocationCountAggregateOutputType = {
     id: number
-    name: number
+    favoriteName: number
     userId: number
     cityId: number
     _all: number
@@ -4278,21 +4278,21 @@ export namespace Prisma {
 
   export type FavoriteLocationMinAggregateInputType = {
     id?: true
-    name?: true
+    favoriteName?: true
     userId?: true
     cityId?: true
   }
 
   export type FavoriteLocationMaxAggregateInputType = {
     id?: true
-    name?: true
+    favoriteName?: true
     userId?: true
     cityId?: true
   }
 
   export type FavoriteLocationCountAggregateInputType = {
     id?: true
-    name?: true
+    favoriteName?: true
     userId?: true
     cityId?: true
     _all?: true
@@ -4386,7 +4386,7 @@ export namespace Prisma {
 
   export type FavoriteLocationGroupByOutputType = {
     id: number
-    name: string
+    favoriteName: string
     userId: number
     cityId: number
     _count: FavoriteLocationCountAggregateOutputType | null
@@ -4412,7 +4412,7 @@ export namespace Prisma {
 
   export type FavoriteLocationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    name?: boolean
+    favoriteName?: boolean
     userId?: boolean
     cityId?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -4423,12 +4423,12 @@ export namespace Prisma {
 
   export type FavoriteLocationSelectScalar = {
     id?: boolean
-    name?: boolean
+    favoriteName?: boolean
     userId?: boolean
     cityId?: boolean
   }
 
-  export type FavoriteLocationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "userId" | "cityId", ExtArgs["result"]["favoriteLocation"]>
+  export type FavoriteLocationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "favoriteName" | "userId" | "cityId", ExtArgs["result"]["favoriteLocation"]>
   export type FavoriteLocationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
     city?: boolean | CityDefaultArgs<ExtArgs>
@@ -4442,7 +4442,7 @@ export namespace Prisma {
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
-      name: string
+      favoriteName: string
       userId: number
       cityId: number
     }, ExtArgs["result"]["favoriteLocation"]>
@@ -4817,7 +4817,7 @@ export namespace Prisma {
    */
   interface FavoriteLocationFieldRefs {
     readonly id: FieldRef<"FavoriteLocation", 'Int'>
-    readonly name: FieldRef<"FavoriteLocation", 'String'>
+    readonly favoriteName: FieldRef<"FavoriteLocation", 'String'>
     readonly userId: FieldRef<"FavoriteLocation", 'Int'>
     readonly cityId: FieldRef<"FavoriteLocation", 'Int'>
   }
@@ -5234,7 +5234,7 @@ export namespace Prisma {
 
   export const FavoriteLocationScalarFieldEnum: {
     id: 'id',
-    name: 'name',
+    favoriteName: 'favoriteName',
     userId: 'userId',
     cityId: 'cityId'
   };
@@ -5282,7 +5282,7 @@ export namespace Prisma {
 
 
   export const FavoriteLocationOrderByRelevanceFieldEnum: {
-    name: 'name'
+    favoriteName: 'favoriteName'
   };
 
   export type FavoriteLocationOrderByRelevanceFieldEnum = (typeof FavoriteLocationOrderByRelevanceFieldEnum)[keyof typeof FavoriteLocationOrderByRelevanceFieldEnum]
@@ -5526,7 +5526,7 @@ export namespace Prisma {
     OR?: FavoriteLocationWhereInput[]
     NOT?: FavoriteLocationWhereInput | FavoriteLocationWhereInput[]
     id?: IntFilter<"FavoriteLocation"> | number
-    name?: StringFilter<"FavoriteLocation"> | string
+    favoriteName?: StringFilter<"FavoriteLocation"> | string
     userId?: IntFilter<"FavoriteLocation"> | number
     cityId?: IntFilter<"FavoriteLocation"> | number
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -5535,7 +5535,7 @@ export namespace Prisma {
 
   export type FavoriteLocationOrderByWithRelationInput = {
     id?: SortOrder
-    name?: SortOrder
+    favoriteName?: SortOrder
     userId?: SortOrder
     cityId?: SortOrder
     user?: UserOrderByWithRelationInput
@@ -5549,7 +5549,7 @@ export namespace Prisma {
     AND?: FavoriteLocationWhereInput | FavoriteLocationWhereInput[]
     OR?: FavoriteLocationWhereInput[]
     NOT?: FavoriteLocationWhereInput | FavoriteLocationWhereInput[]
-    name?: StringFilter<"FavoriteLocation"> | string
+    favoriteName?: StringFilter<"FavoriteLocation"> | string
     userId?: IntFilter<"FavoriteLocation"> | number
     cityId?: IntFilter<"FavoriteLocation"> | number
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -5558,7 +5558,7 @@ export namespace Prisma {
 
   export type FavoriteLocationOrderByWithAggregationInput = {
     id?: SortOrder
-    name?: SortOrder
+    favoriteName?: SortOrder
     userId?: SortOrder
     cityId?: SortOrder
     _count?: FavoriteLocationCountOrderByAggregateInput
@@ -5573,7 +5573,7 @@ export namespace Prisma {
     OR?: FavoriteLocationScalarWhereWithAggregatesInput[]
     NOT?: FavoriteLocationScalarWhereWithAggregatesInput | FavoriteLocationScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"FavoriteLocation"> | number
-    name?: StringWithAggregatesFilter<"FavoriteLocation"> | string
+    favoriteName?: StringWithAggregatesFilter<"FavoriteLocation"> | string
     userId?: IntWithAggregatesFilter<"FavoriteLocation"> | number
     cityId?: IntWithAggregatesFilter<"FavoriteLocation"> | number
   }
@@ -5777,45 +5777,45 @@ export namespace Prisma {
   }
 
   export type FavoriteLocationCreateInput = {
-    name?: string
+    favoriteName: string
     user: UserCreateNestedOneWithoutFavoritesInput
     city: CityCreateNestedOneWithoutFavoritesInput
   }
 
   export type FavoriteLocationUncheckedCreateInput = {
     id?: number
-    name?: string
+    favoriteName: string
     userId: number
     cityId: number
   }
 
   export type FavoriteLocationUpdateInput = {
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     user?: UserUpdateOneRequiredWithoutFavoritesNestedInput
     city?: CityUpdateOneRequiredWithoutFavoritesNestedInput
   }
 
   export type FavoriteLocationUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
     cityId?: IntFieldUpdateOperationsInput | number
   }
 
   export type FavoriteLocationCreateManyInput = {
     id?: number
-    name?: string
+    favoriteName: string
     userId: number
     cityId: number
   }
 
   export type FavoriteLocationUpdateManyMutationInput = {
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
   }
 
   export type FavoriteLocationUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
     cityId?: IntFieldUpdateOperationsInput | number
   }
@@ -6151,7 +6151,7 @@ export namespace Prisma {
 
   export type FavoriteLocationCountOrderByAggregateInput = {
     id?: SortOrder
-    name?: SortOrder
+    favoriteName?: SortOrder
     userId?: SortOrder
     cityId?: SortOrder
   }
@@ -6164,14 +6164,14 @@ export namespace Prisma {
 
   export type FavoriteLocationMaxOrderByAggregateInput = {
     id?: SortOrder
-    name?: SortOrder
+    favoriteName?: SortOrder
     userId?: SortOrder
     cityId?: SortOrder
   }
 
   export type FavoriteLocationMinOrderByAggregateInput = {
     id?: SortOrder
-    name?: SortOrder
+    favoriteName?: SortOrder
     userId?: SortOrder
     cityId?: SortOrder
   }
@@ -6535,13 +6535,13 @@ export namespace Prisma {
   }
 
   export type FavoriteLocationCreateWithoutUserInput = {
-    name?: string
+    favoriteName: string
     city: CityCreateNestedOneWithoutFavoritesInput
   }
 
   export type FavoriteLocationUncheckedCreateWithoutUserInput = {
     id?: number
-    name?: string
+    favoriteName: string
     cityId: number
   }
 
@@ -6576,7 +6576,7 @@ export namespace Prisma {
     OR?: FavoriteLocationScalarWhereInput[]
     NOT?: FavoriteLocationScalarWhereInput | FavoriteLocationScalarWhereInput[]
     id?: IntFilter<"FavoriteLocation"> | number
-    name?: StringFilter<"FavoriteLocation"> | string
+    favoriteName?: StringFilter<"FavoriteLocation"> | string
     userId?: IntFilter<"FavoriteLocation"> | number
     cityId?: IntFilter<"FavoriteLocation"> | number
   }
@@ -6611,13 +6611,13 @@ export namespace Prisma {
   }
 
   export type FavoriteLocationCreateWithoutCityInput = {
-    name?: string
+    favoriteName: string
     user: UserCreateNestedOneWithoutFavoritesInput
   }
 
   export type FavoriteLocationUncheckedCreateWithoutCityInput = {
     id?: number
-    name?: string
+    favoriteName: string
     userId: number
   }
 
@@ -6833,24 +6833,24 @@ export namespace Prisma {
 
   export type FavoriteLocationCreateManyUserInput = {
     id?: number
-    name?: string
+    favoriteName: string
     cityId: number
   }
 
   export type FavoriteLocationUpdateWithoutUserInput = {
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     city?: CityUpdateOneRequiredWithoutFavoritesNestedInput
   }
 
   export type FavoriteLocationUncheckedUpdateWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     cityId?: IntFieldUpdateOperationsInput | number
   }
 
   export type FavoriteLocationUncheckedUpdateManyWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     cityId?: IntFieldUpdateOperationsInput | number
   }
 
@@ -6866,7 +6866,7 @@ export namespace Prisma {
 
   export type FavoriteLocationCreateManyCityInput = {
     id?: number
-    name?: string
+    favoriteName: string
     userId: number
   }
 
@@ -6900,19 +6900,19 @@ export namespace Prisma {
   }
 
   export type FavoriteLocationUpdateWithoutCityInput = {
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     user?: UserUpdateOneRequiredWithoutFavoritesNestedInput
   }
 
   export type FavoriteLocationUncheckedUpdateWithoutCityInput = {
     id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
   }
 
   export type FavoriteLocationUncheckedUpdateManyWithoutCityInput = {
     id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
+    favoriteName?: StringFieldUpdateOperationsInput | string
     userId?: IntFieldUpdateOperationsInput | number
   }
 
