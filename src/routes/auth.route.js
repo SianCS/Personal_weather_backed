@@ -1,72 +1,63 @@
 import express from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import prisma from "../config/prisma.config.js";
+// 🔽 1. Import services และ middlewares ที่จำเป็น
+import { registerUser, loginUser } from "../services/auth.service.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { loginSchema, registerSchema, validate } from "../validations/validator.js";
+// 🔽 แก้ไข: Import ทุกอย่างจากไฟล์ validator ที่เดียว
+import { validate, registerSchema, loginSchema } from "../validations/validator.js";
+import prisma from "../config/prisma.config.js";
+import { createError } from "../utils/createError.js";
 
 const authRouter = express.Router();
 
-// register
-authRouter.post("/register",validate(registerSchema), async (req, res) => {
-  const { email, password } = req.body;
+// --- Register ---
+authRouter.post("/register", validate(registerSchema), async (req, res, next) => {
   try {
-    const existUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existUser) {
-     return res.status(400).json({ error: "Email already used" });
-    }
-
-    const hashed = await bcrypt.hash(password, 10);
-    await prisma.user.create({
-      data: { email, password: hashed },
-    });
-
-    res.status(201).json({ message: "Register Success" });
+    const { email, password } = req.body;
+    // 🔽 2. เรียกใช้ service เพื่อสมัครสมาชิก
+    const newUser = await registerUser(email, password);
+    res.status(201).json({ message: "Registration successful", user: newUser });
   } catch (err) {
-    console.log(err)
-    res.status(400).json({ error: "Something Whrng GG" , });
+    // 🔽 3. ส่ง Error ต่อไปให้ error middleware จัดการ
+    next(err);
   }
 });
 
-// login
-authRouter.post("/login",validate(loginSchema), async (req, res) => {
-  const { email, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user)
-    return res.status(400).json({ message: "Email or Password Worng" });
-  const match = await bcrypt.compare(password, user.password);
-  if (!match)
-    return res.status(400).json({ message: "Email or Password Worng" });
-
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
-  });
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-    },
-  });
+// --- Login ---
+authRouter.post("/login", validate(loginSchema), async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    // 🔽 เรียกใช้ service เพื่อล็อกอิน
+    const result = await loginUser(email, password);
+    res.json(result);
+  } catch (err) {
+    // 🔽 ส่ง Error ต่อไปให้ error middleware จัดการ
+    next(err);
+  }
 });
 
-// Getme
+// --- Get Current User (/me) ---
+// ส่วนนี้ Logic ไม่ซับซ้อน สามารถคงไว้ใน Route ได้
+authRouter.get("/me", authMiddleware, async (req, res, next) => {
+  try {
+    // req.user.userId ถูกตั้งค่ามาจาก authMiddleware
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true,
+      },
+    });
 
-authRouter.get("/me" , authMiddleware, async (req ,res) => {
-  const user = await prisma.user.findUnique({
-    where : {id : req.user.userId},
-    select : {
-      id : true,
-      email : true ,
-      createdAt : true
+    if (!user) {
+      // ใช้ createError ที่คุณสร้างไว้
+      return next(createError(404, "User not found"));
     }
-  })
-  if (!user) return res.status(404).json({ error : "User not found"})
-    res.json(user)
-})
+    
+    res.json(user);
+  } catch (err) {
+      next(err);
+  }
+});
 
-
-export default authRouter
+export default authRouter;
