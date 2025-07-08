@@ -174,3 +174,38 @@ export async function getFiveDayForecastByCityId(cityId) {
     forecasts,
   };
 }
+
+  // หาจากตำแหน่งปัจจุบัน lat , lon 
+export async function getWeatherByCoords(lat, lon) {
+  try {
+    const weatherRes = await axios.get(
+      "https://api.openweathermap.org/data/2.5/weather",
+      {
+        params: {
+          lat,
+          lon,
+          units: "metric",
+          lang: "th",
+          appid: process.env.OWM_KEY,
+        },
+      }
+    );
+
+    const w = weatherRes.data;
+
+    return {
+      city: w.name,
+      temperature: w.main.temp,
+      humidity: w.main.humidity,
+      windSpeed: w.wind.speed,
+      description: w.weather[0].description,
+      time: new Date(w.dt * 1000),
+      source: "from_api_by_coords",
+    };
+  } catch (apiError) {
+    console.error("❌ OpenWeatherMap API Error (by-coords):", apiError.response ? apiError.response.data : apiError.message);
+    createError(502, "Failed to fetch weather data from external service.");
+  }
+}
+
+

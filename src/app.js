@@ -11,9 +11,12 @@ import { apiLimiter, authLimiter } from './utils/limiter.js'
 const app = express()
 
 app.use(express.json())
+app.use(cors({
+	origin : 'http://localhost:5173'
+}))
 
-app.use("/api/weather", apiLimiter, weatherRouter)
 app.use("/api/auth", authLimiter, authRouter)
+app.use("/api/weather", apiLimiter, weatherRouter)
 app.use("/api/favorites", apiLimiter, favoriteRoute);
 app.use("/api/cities", apiLimiter, cityRoute)
 

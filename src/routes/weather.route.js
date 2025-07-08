@@ -1,7 +1,8 @@
 import express from "express";
 // 🔽 1. Import services และ middlewares ที่จำเป็น
-import { getCurrentWeatherByCityName, getFiveDayForecastByCityId } from "../services/weather.service.js";
+import { getCurrentWeatherByCityName, getFiveDayForecastByCityId, getWeatherByCoords } from "../services/weather.service.js";
 import { createError } from "../utils/createError.js"; // 🔽 Import createError
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const weatherRouter = express.Router();
 
@@ -34,7 +35,7 @@ weatherRouter.get("/", async (req, res, next) => {
  * @desc    ดึงข้อมูลพยากรณ์อากาศล่วงหน้า 5 วัน
  * @access  Public
  */
-weatherRouter.get("/:cityId/forecast", async (req, res, next) => {
+weatherRouter.get("/:cityId/forecast",authMiddleware , async (req, res, next) => {
   const cityId = parseInt(req.params.cityId, 10);
 
   if (isNaN(cityId)) {
@@ -48,6 +49,34 @@ weatherRouter.get("/:cityId/forecast", async (req, res, next) => {
     return res.json(forecastData);
   } catch (err) {
     // 🔽 ส่ง Error ทั้งหมดต่อไปให้ error middleware จัดการ
+    next(err);
+  }
+});
+
+
+ //  หาสภาพอากาศ จาก lat ,lon  
+weatherRouter.get("/by-coords", async (req, res, next) => {
+  const { lat, lon } = req.query;
+
+  // ตรวจสอบว่ามี lat และ lon ส่งมาหรือไม่
+  if (!lat || !lon) {
+    return next(createError(400, "Latitude (lat) and Longitude (lon) are required."));
+  }
+
+  const latitude = parseFloat(lat);
+  const longitude = parseFloat(lon);
+
+  // ตรวจสอบว่า lat และ lon เป็นตัวเลขที่ถูกต้อง
+  if (isNaN(latitude) || isNaN(longitude)) {
+    return next(createError(400, "Invalid latitude or longitude format."));
+  }
+
+  try {
+    // � 2. เรียกใช้ service เพื่อดึงข้อมูลอากาศจากพิกัด
+    const weatherData = await getWeatherByCoords(latitude, longitude);
+    return res.json(weatherData);
+  } catch (err) {
+    // 🔽 3. ส่ง Error ต่อไปให้ middleware จัดการ
     next(err);
   }
 });
