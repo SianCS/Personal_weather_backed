@@ -1,12 +1,11 @@
 import axios from "axios";
 import prisma from "../config/prisma.config.js";
-// 🔽 1. Import ฟังก์ชัน createError ที่คุณสร้างขึ้น
 import { createError } from "../utils/createError.js";
 
-const CACHE_DURATION_MINUTES = 15;
+const CACHE_DURATION_MINUTES = 10;
 
 /**
- * 🔽 ฟังก์ชันใหม่: ค้นหาเมืองจากฐานข้อมูลเท่านั้น
+ * 🔽 เพิ่ม: ฟังก์ชันสำหรับค้นหาเมืองใน DB เท่านั้น
  * @param {string} cityName - ชื่อเมืองที่ต้องการค้นหา
  * @returns {Promise<object|null>} ข้อมูลเมือง หรือ null ถ้าไม่พบ
  */
@@ -25,10 +24,10 @@ export async function findCityByNameInDB(cityName) {
  * ค้นหาเมืองในฐานข้อมูล หรือสร้างใหม่ถ้าไม่พบ
  * @param {string} cityName - ชื่อเมืองที่ต้องการค้นหา
  * @returns {Promise<object>} ข้อมูลเมืองจากฐานข้อมูล
- * @throws {Error} หากไม่พบเมืองจาก API หรือเกิดข้อผิดพลาด
+ * @throws {Error} หากไม่พบเมืองจาก API
  */
 export async function getOrCreateCity(cityName) {
-  // 🔽 ใช้ฟังก์ชัน findCityByNameInDB ที่เราสร้างขึ้น
+  // 🔽 ใช้ฟังก์ชัน findCityByNameInDB ที่เราเพิ่งสร้าง
   let city = await findCityByNameInDB(cityName);
 
   if (city) {
@@ -88,11 +87,7 @@ export async function getCurrentWeatherByCityName(cityName) {
   if (cachedWeather && cachedWeather.timestamp > cacheDuration) {
     return {
       city: city.locationName,
-      temperature: cachedWeather.temperature,
-      humidity: cachedWeather.humidity,
-      windSpeed: cachedWeather.windSpeed,
-      description: cachedWeather.description,
-      time: cachedWeather.timestamp,
+      ...cachedWeather,
       source: "from_cache",
     };
   }
@@ -109,9 +104,20 @@ export async function getCurrentWeatherByCityName(cityName) {
 
   const w = weatherRes.data;
 
+  // --- เพิ่ม: ดึงข้อมูล "โอกาสเกิดฝน" จาก Forecast API ---
+  const forecastRes = await axios.get("https://api.openweathermap.org/data/2.5/forecast", {
+      params: { lat: city.latitude, lon: city.longitude, cnt: 1, appid: process.env.OWM_KEY }
+  });
+  const chanceOfRain = Math.round((forecastRes.data?.list?.[0]?.pop || 0) * 100);
+  // ----------------------------------------------------
+
   const updatedWeather = await prisma.weatherData.upsert({
     where: { cityId: city.id },
     update: {
+      dt: w.dt,
+      timezone: w.timezone,
+      icon: w.weather[0].icon,
+      chanceOfRain: chanceOfRain, // ✅ แก้ไข: กลับไปใช้ chanceOfRain
       timestamp: new Date(w.dt * 1000),
       temperature: w.main.temp,
       humidity: w.main.humidity,
@@ -120,6 +126,10 @@ export async function getCurrentWeatherByCityName(cityName) {
     },
     create: {
       cityId: city.id,
+      dt: w.dt,
+      timezone: w.timezone,
+      icon: w.weather[0].icon,
+      chanceOfRain: chanceOfRain, // ✅ แก้ไข: กลับไปใช้ chanceOfRain
       timestamp: new Date(w.dt * 1000),
       temperature: w.main.temp,
       humidity: w.main.humidity,
@@ -130,11 +140,7 @@ export async function getCurrentWeatherByCityName(cityName) {
 
   return {
     city: city.locationName,
-    temperature: updatedWeather.temperature,
-    humidity: updatedWeather.humidity,
-    windSpeed: updatedWeather.windSpeed,
-    description: updatedWeather.description,
-    time: updatedWeather.timestamp,
+    ...updatedWeather,
     source: "from_api_or_updated",
   };
 }
@@ -167,6 +173,7 @@ export async function getFiveDayForecastByCityId(cityId) {
     humidity: item.main.humidity,
     description: item.weather[0].description,
     icon: `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`,
+    chanceOfRain: Math.round((item.pop || 0) * 100), // ✅ แก้ไข: กลับไปใช้ chanceOfRain
   }));
 
   return {
@@ -175,7 +182,13 @@ export async function getFiveDayForecastByCityId(cityId) {
   };
 }
 
-  // หาจากตำแหน่งปัจจุบัน lat , lon 
+/**
+ * ดึงข้อมูลอากาศล่าสุดจากพิกัด (ละติจูด/ลองจิจูด)
+ * @param {number} lat - ละติจูด
+ * @param {number} lon - ลองจิจูด
+ * @returns {Promise<object>} ข้อมูลอากาศล่าสุด ณ ตำแหน่งนั้น
+ * @throws {Error} หากเกิดข้อผิดพลาดจาก API
+ */
 export async function getWeatherByCoords(lat, lon) {
   try {
     const weatherRes = await axios.get(
@@ -193,8 +206,19 @@ export async function getWeatherByCoords(lat, lon) {
 
     const w = weatherRes.data;
 
+    // --- เพิ่ม: ดึงข้อมูล "โอกาสเกิดฝน" จาก Forecast API ---
+    const forecastRes = await axios.get("https://api.openweathermap.org/data/2.5/forecast", {
+        params: { lat, lon, cnt: 1, appid: process.env.OWM_KEY }
+    });
+    const chanceOfRain = Math.round((forecastRes.data?.list?.[0]?.pop || 0) * 100);
+    // ----------------------------------------------------
+
     return {
       city: w.name,
+      dt: w.dt,
+      timezone: w.timezone,
+      icon: w.weather[0].icon,
+      chanceOfRain: chanceOfRain, // ✅ แก้ไข: กลับไปใช้ chanceOfRain
       temperature: w.main.temp,
       humidity: w.main.humidity,
       windSpeed: w.wind.speed,
@@ -207,5 +231,3 @@ export async function getWeatherByCoords(lat, lon) {
     createError(502, "Failed to fetch weather data from external service.");
   }
 }
-
-

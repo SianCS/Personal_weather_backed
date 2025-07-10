@@ -32,13 +32,18 @@ model City {
   weatherRecords WeatherData[]
   favorites      FavoriteLocation[]
   updatedAt      DateTime           @default(now()) @updatedAt
+
   @@unique([latitude, longitude])
 }
 
 model WeatherData {
   id          Int      @id @default(autoincrement())
   city        City     @relation(fields: [cityId], references: [id])
-  cityId      Int       @unique
+  cityId      Int      @unique
+  dt          Int
+  timezone    Int
+  icon        String
+  chanceOfRain Int?
   timestamp   DateTime
   temperature Float
   humidity    Int
@@ -48,12 +53,12 @@ model WeatherData {
 }
 
 model FavoriteLocation {
-  id     Int    @id @default(autoincrement())
-  favoriteName   String?
-  user   User   @relation(fields: [userId], references: [id])
-  userId Int
-  city   City   @relation(fields: [cityId], references: [id])
-  cityId Int
+  id           Int     @id @default(autoincrement())
+  favoriteName String?
+  user         User    @relation(fields: [userId], references: [id])
+  userId       Int
+  city         City    @relation(fields: [cityId], references: [id])
+  cityId       Int
 
   @@unique([userId, cityId])
 }
