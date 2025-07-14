@@ -16,29 +16,27 @@ const favoriteRoute = express.Router();
 
 // ✅ POST /favorites - เพิ่มรายการโปรด (เวอร์ชันปรับปรุง)
 favoriteRoute.post("/", authMiddleware, async (req, res, next) => {
-  const { cityName, favoriteName } = req.body;
+  
+  // 1. รับ cityId และ favoriteName จาก body
+  const { cityId, favoriteName } = req.body;
 
-  if (!cityName?.trim()) {
-    return next(createError(400, "City name is required"));
+  // 2. ตรวจสอบว่า cityId ที่ส่งมาเป็นตัวเลขที่ถูกต้อง
+  if (typeof cityId !== 'number' || !cityId) {
+    return next(createError(400, "City ID is required and must be a number."));
   }
 
   try {
-    // 🔽 2. ค้นหาเมืองใน DB ของเราเท่านั้น
-    const city = await findCityByNameInDB(cityName);
-
-    // 🔽 3. ถ้าไม่เจอ ให้แจ้งผู้ใช้
-    if (!city) {
-      return next(createError(404, `City '${cityName}' not found. Please search for it first to add it to our system.`));
-    }
-    
-    // 🔽 4. เรียกใช้ service เพื่อเพิ่ม favorite
-    const newFavorite = await addFavorite(req.user.userId, city.id, favoriteName);
+    // 3. เรียกใช้ service เพื่อเพิ่ม favorite โดยตรง
+    // โดยส่ง userId, cityId, และ favoriteName ไปให้ Service จัดการ
+    const newFavorite = await addFavorite(req.user.userId, cityId, favoriteName);
 
     res.status(201).json({ message: "Added to favorites", favorite: newFavorite });
   } catch (err) {
+    // 4. ส่ง Error ที่ได้รับจาก Service ต่อไปให้ middleware จัดการ
     next(err);
   }
 });
+
 
 // ✅ GET /favorites - ดึงรายการโปรดทั้งหมด
 favoriteRoute.get("/", authMiddleware, async (req, res, next) => {

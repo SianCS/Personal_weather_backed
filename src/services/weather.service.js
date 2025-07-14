@@ -34,9 +34,12 @@ export async function getOrCreateCity(cityName) {
     return city;
   }
 
-  const geoRes = await axios.get("https://api.openweathermap.org/geo/1.0/direct", {
-    params: { q: cityName, limit: 1, appid: process.env.OWM_KEY },
-  });
+  const geoRes = await axios.get(
+    "https://api.openweathermap.org/geo/1.0/direct",
+    {
+      params: { q: cityName, limit: 1, appid: process.env.OWM_KEY },
+    }
+  );
 
   const geo = geoRes.data?.[0];
   if (!geo) {
@@ -62,9 +65,13 @@ export async function getOrCreateCity(cityName) {
     });
     return city;
   } catch (error) {
-    if (error.code === 'P2002') {
-      console.warn(`⚠️ Race condition for '${cityName}'. Finding existing city again.`);
-      return await prisma.city.findFirst({ where: { latitude: geo.lat, longitude: geo.lon }});
+    if (error.code === "P2002") {
+      console.warn(
+        `⚠️ Race condition for '${cityName}'. Finding existing city again.`
+      );
+      return await prisma.city.findFirst({
+        where: { latitude: geo.lat, longitude: geo.lon },
+      });
     }
     throw error;
   }
@@ -79,36 +86,54 @@ export async function getCurrentWeatherByCityName(cityName) {
   const city = await getOrCreateCity(cityName);
   if (!city) createError(500, "Could not find or create city.");
 
-  const cacheDuration = new Date(Date.now() - CACHE_DURATION_MINUTES * 60 * 1000);
+  const cacheDuration = new Date(
+    Date.now() - CACHE_DURATION_MINUTES * 60 * 1000
+  );
   const cachedWeather = await prisma.weatherData.findUnique({
     where: { cityId: city.id },
   });
 
   if (cachedWeather && cachedWeather.timestamp > cacheDuration) {
     return {
+      cityId: city.id,
       city: city.locationName,
+      latitude: city.latitude, // ✅ เพิ่ม: ส่งพิกัดจากข้อมูลเมือง
+      longitude: city.longitude, // ✅ เพิ่ม: ส่งพิกัดจากข้อมูลเมือง
       ...cachedWeather,
       source: "from_cache",
     };
   }
 
-  const weatherRes = await axios.get("https://api.openweathermap.org/data/2.5/weather", {
-    params: {
-      lat: city.latitude,
-      lon: city.longitude,
-      units: "metric",
-      lang: "th",
-      appid: process.env.OWM_KEY,
-    },
-  });
+  const weatherRes = await axios.get(
+    "https://api.openweathermap.org/data/2.5/weather",
+    {
+      params: {
+        lat: city.latitude,
+        lon: city.longitude,
+        units: "metric",
+        lang: "th",
+        appid: process.env.OWM_KEY,
+      },
+    }
+  );
 
   const w = weatherRes.data;
 
   // --- เพิ่ม: ดึงข้อมูล "โอกาสเกิดฝน" จาก Forecast API ---
-  const forecastRes = await axios.get("https://api.openweathermap.org/data/2.5/forecast", {
-      params: { lat: city.latitude, lon: city.longitude, cnt: 1, appid: process.env.OWM_KEY }
-  });
-  const chanceOfRain = Math.round((forecastRes.data?.list?.[0]?.pop || 0) * 100);
+  const forecastRes = await axios.get(
+    "https://api.openweathermap.org/data/2.5/forecast",
+    {
+      params: {
+        lat: city.latitude,
+        lon: city.longitude,
+        cnt: 1,
+        appid: process.env.OWM_KEY,
+      },
+    }
+  );
+  const chanceOfRain = Math.round(
+    (forecastRes.data?.list?.[0]?.pop || 0) * 100
+  );
   // ----------------------------------------------------
 
   const updatedWeather = await prisma.weatherData.upsert({
@@ -139,6 +164,7 @@ export async function getCurrentWeatherByCityName(cityName) {
   });
 
   return {
+    cityId: city.id,
     city: city.locationName,
     ...updatedWeather,
     source: "from_api_or_updated",
@@ -156,15 +182,18 @@ export async function getFiveDayForecastByCityId(cityId) {
     createError(404, "City not found in database");
   }
 
-  const forecastRes = await axios.get("https://api.openweathermap.org/data/2.5/forecast", {
-    params: {
-      lat: city.latitude,
-      lon: city.longitude,
-      units: "metric",
-      lang: "th",
-      appid: process.env.OWM_KEY,
-    },
-  });
+  const forecastRes = await axios.get(
+    "https://api.openweathermap.org/data/2.5/forecast",
+    {
+      params: {
+        lat: city.latitude,
+        lon: city.longitude,
+        units: "metric",
+        lang: "th",
+        appid: process.env.OWM_KEY,
+      },
+    }
+  );
 
   const forecasts = forecastRes.data.list.map((item) => ({
     time: item.dt_txt,
@@ -191,6 +220,7 @@ export async function getFiveDayForecastByCityId(cityId) {
  */
 export async function getWeatherByCoords(lat, lon) {
   try {
+    // 1. ดึงข้อมูลอากาศปัจจุบันจาก API ก่อน
     const weatherRes = await axios.get(
       "https://api.openweathermap.org/data/2.5/weather",
       {
@@ -203,22 +233,56 @@ export async function getWeatherByCoords(lat, lon) {
         },
       }
     );
-
     const w = weatherRes.data;
 
-    // --- เพิ่ม: ดึงข้อมูล "โอกาสเกิดฝน" จาก Forecast API ---
-    const forecastRes = await axios.get("https://api.openweathermap.org/data/2.5/forecast", {
-        params: { lat, lon, cnt: 1, appid: process.env.OWM_KEY }
-    });
-    const chanceOfRain = Math.round((forecastRes.data?.list?.[0]?.pop || 0) * 100);
-    // ----------------------------------------------------
+    // 2. ปัดเศษพิกัดเพื่อป้องกันข้อมูลซ้ำซ้อน
+    const roundedLat = parseFloat(lat.toFixed(4));
+    const roundedLon = parseFloat(lon.toFixed(4));
 
+    // 3. ตรวจสอบใน DB ว่ามีเมืองที่พิกัดนี้ (ที่ปัดเศษแล้ว) อยู่แล้วหรือไม่
+    let city = await prisma.city.findFirst({
+      where: {
+        latitude: roundedLat,
+        longitude: roundedLon,
+      },
+    });
+
+    // 4. ถ้ายังไม่มี ให้สร้างเมืองใหม่สำหรับพิกัดนี้
+    if (!city) {
+      console.log(
+        `Creating new city entry for coords: ${roundedLat}, ${roundedLon}`
+      );
+      city = await prisma.city.create({
+        data: {
+          cityName: w.name, // ใช้ชื่อที่ได้จาก API เป็นชื่อหลัก
+          locationName: w.name,
+          latitude: roundedLat,
+          longitude: roundedLon,
+        },
+      });
+    }
+
+    // 5. ดึงข้อมูลโอกาสเกิดฝน
+    const forecastRes = await axios.get(
+      "https://api.openweathermap.org/data/2.5/forecast",
+      {
+        params: { lat, lon, cnt: 1, appid: process.env.OWM_KEY },
+      }
+    );
+    const chanceOfRain = Math.round(
+      (forecastRes.data?.list?.[0]?.pop || 0) * 100
+    );
+
+    // 6. ส่งข้อมูลกลับพร้อม cityId ที่ถูกต้อง
     return {
+      cityId: city.id,
       city: w.name,
+      latitude: lat,
+      longitude: lon,
       dt: w.dt,
       timezone: w.timezone,
       icon: w.weather[0].icon,
-      chanceOfRain: chanceOfRain, // ✅ แก้ไข: กลับไปใช้ chanceOfRain
+      chanceOfRain: chanceOfRain,
       temperature: w.main.temp,
       humidity: w.main.humidity,
       windSpeed: w.wind.speed,
@@ -227,7 +291,7 @@ export async function getWeatherByCoords(lat, lon) {
       source: "from_api_by_coords",
     };
   } catch (apiError) {
-    console.error("❌ OpenWeatherMap API Error (by-coords):", apiError.response ? apiError.response.data : apiError.message);
+    console.error("❌ OpenWeatherMap API Error (by-coords):", apiError.message);
     createError(502, "Failed to fetch weather data from external service.");
   }
 }

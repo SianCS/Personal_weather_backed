@@ -1,6 +1,7 @@
 import prisma from "../config/prisma.config.js";
-// 🔽 1. Import ฟังก์ชัน createError ที่คุณสร้างขึ้น
 import { createError } from "../utils/createError.js";
+// 🔽 ไม่จำเป็นต้อง import getOrCreateCity ในไฟล์นี้แล้ว
+// import { getOrCreateCity } from "./weather.service.js";
 
 /**
  * ดึงรายการเมืองโปรดทั้งหมดของผู้ใช้
@@ -10,10 +11,9 @@ import { createError } from "../utils/createError.js";
 export async function getFavoritesByUserId(userId) {
   const favorites = await prisma.favoriteLocation.findMany({
     where: { userId },
-    include: { city: true }, // รวมข้อมูลเมืองที่เกี่ยวข้องมาด้วย
+    include: { city: true },
   });
 
-  // จัดรูปแบบข้อมูลก่อนส่งกลับ
   return favorites.map(fav => ({
     id: fav.id,
     favoriteName: fav.favoriteName,
@@ -26,21 +26,29 @@ export async function getFavoritesByUserId(userId) {
 }
 
 /**
- * เพิ่มเมืองใหม่เข้ารายการโปรด
+ * ✅ แก้ไข: เปลี่ยนชื่อฟังก์ชันและพารามิเตอร์ให้รับ cityId โดยตรง
  * @param {number} userId - ID ของผู้ใช้
- * @param {number} cityId - ID ของเมือง
- * @param {string | null} favoriteName - ชื่อเล่นที่ผู้ใช้ตั้ง (อาจเป็น null)
+ * @param {number} cityId - ID ของเมืองที่ต้องการเพิ่ม
+ * @param {string | null} favoriteName - ชื่อเล่นที่ผู้ใช้ตั้ง
  * @returns {Promise<object>} ข้อมูล favorite ที่สร้างขึ้นใหม่
  */
 export async function addFavorite(userId, cityId, favoriteName) {
-  // 1. ตรวจสอบว่าเคย favorite ไปแล้วหรือยัง
+  // 1. ตรวจสอบว่าเมืองนี้มีอยู่จริงในระบบหรือไม่
+  const cityExists = await prisma.city.findUnique({
+    where: { id: cityId },
+  });
+
+  if (!cityExists) {
+    createError(404, "City with the provided ID not found.");
+  }
+
+  // 2. ตรวจสอบว่าเคย favorite ไปแล้วหรือยัง
   const existingFavorite = await prisma.favoriteLocation.findFirst({
     where: { userId, cityId },
   });
 
   if (existingFavorite) {
-    // 🔽 2. เรียกใช้ createError เพื่อโยนข้อผิดพลาด
-    createError(409, "City is already in favorites"); // 409 Conflict
+    createError(409, "City is already in favorites");
   }
 
   // 3. สร้างรายการโปรดใหม่
@@ -53,6 +61,7 @@ export async function addFavorite(userId, cityId, favoriteName) {
     include: { city: true },
   });
 
+  // 4. จัดรูปแบบข้อมูลก่อนส่งกลับ
   return {
     id: newFavorite.id,
     cityId: newFavorite.cityId,
@@ -70,7 +79,6 @@ export async function addFavorite(userId, cityId, favoriteName) {
  * @returns {Promise<object>} ข้อมูล favorite ที่อัปเดตแล้ว
  */
 export async function updateFavoriteName(userId, favoriteId, newName) {
-  // 1. ตรวจสอบว่าเป็นเจ้าของรายการโปรดนี้จริงหรือไม่
   const favorite = await prisma.favoriteLocation.findUnique({
     where: { id: favoriteId },
   });
@@ -79,12 +87,9 @@ export async function updateFavoriteName(userId, favoriteId, newName) {
     createError(404, "Favorite not found or unauthorized");
   }
 
-  // 2. อัปเดตชื่อ
   return await prisma.favoriteLocation.update({
     where: { id: favoriteId },
-    data: {
-      favoriteName: newName?.trim() || null,
-    },
+    data: { favoriteName: newName?.trim() || null },
   });
 }
 
@@ -92,10 +97,8 @@ export async function updateFavoriteName(userId, favoriteId, newName) {
  * ลบเมืองออกจากรายการโปรด
  * @param {number} userId - ID ของผู้ใช้
  * @param {number} favoriteId - ID ของรายการโปรด
- * @returns {Promise<void>}
  */
 export async function deleteFavorite(userId, favoriteId) {
-  // 1. ตรวจสอบว่าเป็นเจ้าของรายการโปรดนี้จริงหรือไม่
   const favorite = await prisma.favoriteLocation.findUnique({
     where: { id: favoriteId },
   });
@@ -104,7 +107,6 @@ export async function deleteFavorite(userId, favoriteId) {
     createError(404, "Favorite not found or unauthorized");
   }
 
-  // 2. ลบรายการโปรด
   await prisma.favoriteLocation.delete({
     where: { id: favoriteId },
   });
