@@ -32,24 +32,25 @@ model City {
   weatherRecords WeatherData[]
   favorites      FavoriteLocation[]
   updatedAt      DateTime           @default(now()) @updatedAt
+  forecast       Forecast[]
 
   @@unique([latitude, longitude])
 }
 
 model WeatherData {
-  id          Int      @id @default(autoincrement())
-  city        City     @relation(fields: [cityId], references: [id])
-  cityId      Int      @unique
-  dt          Int
-  timezone    Int
-  icon        String
+  id           Int      @id @default(autoincrement())
+  city         City     @relation(fields: [cityId], references: [id])
+  cityId       Int      @unique
+  dt           Int
+  timezone     Int
+  icon         String
   chanceOfRain Int?
-  timestamp   DateTime
-  temperature Float
-  humidity    Int
-  windSpeed   Float
-  description String?
-  updatedAt   DateTime @default(now()) @updatedAt
+  timestamp    DateTime
+  temperature  Float
+  humidity     Int
+  windSpeed    Float
+  description  String?
+  updatedAt    DateTime @default(now()) @updatedAt
 }
 
 model FavoriteLocation {
@@ -61,4 +62,17 @@ model FavoriteLocation {
   cityId       Int
 
   @@unique([userId, cityId])
+}
+
+model Forecast {
+  id     Int  @id @default(autoincrement())
+  city   City @relation(fields: [cityId], references: [id])
+  cityId Int
+
+  forecastTime DateTime // เวลาของข้อมูลพยากรณ์
+  data         Json // เก็บข้อมูลพยากรณ์ทั้งหมดในรูปแบบ JSON
+
+  fetchedAt DateTime @default(now()) // เวลาที่เราดึงข้อมูลนี้มา
+
+  @@index([cityId])
 }

@@ -72,7 +72,7 @@ weatherRouter.get("/by-coords", async (req, res, next) => {
   }
 
   try {
-    // � 2. เรียกใช้ service เพื่อดึงข้อมูลอากาศจากพิกัด
+    //  2. เรียกใช้ service เพื่อดึงข้อมูลอากาศจากพิกัด
     const weatherData = await getWeatherByCoords(latitude, longitude);
     return res.json(weatherData);
   } catch (err) {
